@@ -1,0 +1,3 @@
+[submodule "3rd/cpp-linenoise"]
+	path = 3rd/cpp-linenoise
+	url = https://github.com/yhirose/cpp-linenoise.git
