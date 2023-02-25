@@ -18,42 +18,40 @@ private:
 class SqlTable_t
 {
 public:
-    bool selectData(std::string& column_name, ConditionDescriptor_t& condition);
-    bool insertRow(std::vector<SqlValue_t>& value);
-    bool deleteRow(ConditionDescriptor_t& condition);
+    bool selectData(const std::string& column_name, const ConditionDescriptor_t& condition);
+    bool insertRow(const std::vector<SqlValue_t>& value);
+    bool deleteRow(const ConditionDescriptor_t& condition);
 
 private:
-    std::string                         table_name_;
     std::vector<TableColumnProperty_t>  vec_property_;
     std::vector<SqlRow_t>               vec_data_;
 
-    static bool compare(std::vector<SqlValue_t>& value, ConditionDescriptor_t& condition);
-    bool getColumnIndex(std::string& column_name, uint32_t& index);
-    bool verifyColumnProperty(std::vector<TableColumnProperty_t>& vec_property);
-    bool verifyRowData(std::vector<SqlValue_t>& value);
+    static bool compare(const std::vector<SqlValue_t>& value, const ConditionDescriptor_t& condition);
+    bool getColumnIndex(const std::string& column_name, uint32_t& index);
+    bool verifyColumnProperty(const std::vector<TableColumnProperty_t>& vec_property);
+    bool verifyRowData(const std::vector<SqlValue_t>& value);
 
 };
 
 class SqlDatabase_t
 {
 public:
-    bool createTable(std::string& tb_name);
-    bool createTable(std::string& tb_name, std::vector<TableColumnProperty_t>& vec_column_property);
-    bool dropTable(std::string& tb_name);
+    bool createTable(const std::string& tb_name);
+    bool createTable(const std::string& tb_name, const std::vector<TableColumnProperty_t>& vec_column_property);
+    bool dropTable(const std::string& tb_name);
 
-    SqlTable_t* getTableByName(std::string& tb_name);
+    SqlTable_t* getTableByName(const std::string& tb_name);
 
 private:
-    std::string db_name_;
     std::map<std::string, SqlTable_t>  map_table_;
 };
 
 class SqlSupreme_t
 {
 public:
-    bool createDatabase(std::string& db_name);
-    bool dropDatabase(std::string& db_name);
-    bool useDatabase(std::string& db_name);
+    bool createDatabase(const std::string& db_name);
+    bool dropDatabase(const std::string& db_name);
+    bool useDatabase(const std::string& db_name);
 
     SqlDatabase_t* getDatabaseInUse() { return p_db_in_use_; }
 

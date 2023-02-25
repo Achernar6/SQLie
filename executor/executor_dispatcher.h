@@ -28,10 +28,11 @@ private:
     bool handleDelete(const PacketDelect_t& packet);
     bool handleInsert(const PacketInsert_t& packet);
 
-    bool         is_running_;
-    std::thread  th_backend_;
+    bool          is_running_;
+    std::thread   th_backend_;
     std::shared_ptr<LockFreeQueue<PacketCollection_t>>  sp_lfq_;
 
+    SqlSupreme_t  sql_;
 };
 
 } // namespace sql::exec

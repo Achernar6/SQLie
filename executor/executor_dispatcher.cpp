@@ -21,35 +21,35 @@ bool SqlExecutorDispatcher::dispatch(PacketCollection_t& command)
     }
     else if (auto p_create_db = std::get_if<PacketCreateDatabase_t>(&command))
     {
-        return true;
+        return handleCreateDatabase(*p_create_db);
     }
-    else if (auto p_create_db = std::get_if<PacketDropDatabase_t>(&command))
+    else if (auto p_drop_db = std::get_if<PacketDropDatabase_t>(&command))
     {
-        return true;
+        return handleDropDatabase(*p_drop_db);
     }
-    else if (auto p_create_db = std::get_if<PacketCreateTable_t>(&command))
+    else if (auto p_create_tb = std::get_if<PacketCreateTable_t>(&command))
     {
-        return true;
+        return handleCreateTable(*p_create_tb);
     }
-    else if (auto p_create_db = std::get_if<PacketUseDatabase_t>(&command))
+    else if (auto p_use_db = std::get_if<PacketUseDatabase_t>(&command))
     {
-        return true;
+        return handleUseDatabase(*p_use_db);
     }
-    else if (auto p_create_db = std::get_if<PacketDropTable_t>(&command))
+    else if (auto p_drop_tb = std::get_if<PacketDropTable_t>(&command))
     {
-        return true;
+        return handleDropTable(*p_drop_tb);
     }
-    else if (auto p_create_db = std::get_if<PacketSelect_t>(&command))
+    else if (auto p_select = std::get_if<PacketSelect_t>(&command))
     {
-        return true;
+        return handleSelect(*p_select);
     }
-    else if (auto p_create_db = std::get_if<PacketDelect_t>(&command))
+    else if (auto p_delect = std::get_if<PacketDelect_t>(&command))
     {
-        return true;
+        return handleDelete(*p_delect);
     }
-    else if (auto p_create_db = std::get_if<PacketInsert_t>(&command))
+    else if (auto p_insert = std::get_if<PacketInsert_t>(&command))
     {
-        return true;
+        return handleInsert(*p_insert);
     }
 
     printf("Unknown data packet\n");
@@ -68,12 +68,12 @@ void SqlExecutorDispatcher::runBackend()
 
 bool SqlExecutorDispatcher::handleCreateDatabase(const PacketCreateDatabase_t& packet)
 {
-    return true;
+    return sql_.createDatabase(packet.db_name);
 }
 
 bool SqlExecutorDispatcher::handleDropDatabase(const PacketDropDatabase_t& packet)
 {
-    return true;
+    return sql_.dropDatabase(packet.db_name);
 }
 
 bool SqlExecutorDispatcher::handleCreateTable(const PacketCreateTable_t& packet)
@@ -83,7 +83,7 @@ bool SqlExecutorDispatcher::handleCreateTable(const PacketCreateTable_t& packet)
 
 bool SqlExecutorDispatcher::handleUseDatabase(const PacketUseDatabase_t& packet)
 {
-    return true;
+    return sql_.useDatabase(packet.db_name);
 }
 
 bool SqlExecutorDispatcher::handleDropTable(const PacketDropTable_t& packet)
