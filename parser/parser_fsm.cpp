@@ -508,10 +508,10 @@ bool FsmParser::registerTransition(TransitionKey_t&& condition, TransitionProper
 
 bool FsmParser::parseCondition(std::string& str_condition, ConditionDescriptor_t& condition)
 {
-    std::string column_name;
-    std::string op1;
-    std::string op2;
-    std::string value;
+    std::string column_name = "";
+    std::string op1         = "";
+    std::string op2         = "";
+    std::string value       = "";
 
     size_t index = 0;
     for (; index < str_condition.size(); index ++)
@@ -522,7 +522,11 @@ bool FsmParser::parseCondition(std::string& str_condition, ConditionDescriptor_t
         {
             if (op1.empty()) op1.append(1, _char);
             else if (op2.empty()) op2.append(1, _char);
-            else context_.error_indication = EnumParserErrorIndication::INVALID_CONDITION; return false;
+            else
+            {
+                context_.error_indication = EnumParserErrorIndication::INVALID_CONDITION;
+                return false;   
+            }
         }
         else
         {
@@ -531,16 +535,26 @@ bool FsmParser::parseCondition(std::string& str_condition, ConditionDescriptor_t
         }
     }
 
-    if (column_name.empty() || op1.empty() || value.empty()) context_.error_indication = EnumParserErrorIndication::INVALID_CONDITION; return false;
+    if (column_name.empty() || op1.empty() || value.empty())
+    {
+        context_.error_indication = EnumParserErrorIndication::INVALID_CONDITION;
+        return false;   
+    }
+
     if (op1 == "<" && op2.empty()) condition.action = EnumConditionActionType::LT;
     else if (op1 == "<" && op2 == "=") condition.action = EnumConditionActionType::LTEQ;
     else if (op1 == "=" && op2 == "=") condition.action = EnumConditionActionType::EQ;
+    else if (op1 == "=" && op2.empty()) condition.action = EnumConditionActionType::EQ;
     else if (op1 == ">" && op2 == "=") condition.action = EnumConditionActionType::GTEQ;
     else if (op1 == ">" && op2.empty()) condition.action = EnumConditionActionType::GT;
-    else context_.error_indication = EnumParserErrorIndication::INVALID_CONDITION; return false;
+    else
+    {
+        context_.error_indication = EnumParserErrorIndication::INVALID_CONDITION;
+        return false;   
+    }
 
-    condition.column_name = column_name;
-    condition.anchor_val = value;
+    condition.column_name = std::move(column_name);
+    condition.anchor_val = std::move(value);
 
     return true;
 }
