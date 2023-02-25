@@ -7,36 +7,41 @@
 namespace sql::exec
 {
 
-class SqlRow_t
+template <typename SqlType>
+bool compare(const SqlType& value, const SqlType& anchor_value, const EnumConditionActionType& action)
 {
-public:
-
-private:
-    std::vector<SqlValue_t>  value_;
-};
+    switch (action)
+    {
+        case EnumConditionActionType::LT:   return value <  anchor_value;
+        case EnumConditionActionType::LTEQ: return value <= anchor_value;
+        case EnumConditionActionType::EQ:   return value == anchor_value;
+        case EnumConditionActionType::GTEQ: return value >= anchor_value;
+        case EnumConditionActionType::GT:   return value >  anchor_value;
+        default: return false;
+    }
+}
 
 class SqlTable_t
 {
 public:
+    bool selectData(const std::string& column_name);
     bool selectData(const std::string& column_name, const ConditionDescriptor_t& condition);
-    bool insertRow(const std::vector<SqlValue_t>& value);
+    bool insertRow(const std::vector<std::string>& value);
     bool deleteRow(const ConditionDescriptor_t& condition);
+    inline void setProperty(const std::vector<TableColumnProperty_t>& vec_column_property) { vec_property_ = vec_column_property; }
 
 private:
-    std::vector<TableColumnProperty_t>  vec_property_;
-    std::vector<SqlRow_t>               vec_data_;
+    std::vector<TableColumnProperty_t>    vec_property_;
+    std::vector<std::vector<SqlValue_t>>  vec_data_;
 
-    static bool compare(const std::vector<SqlValue_t>& value, const ConditionDescriptor_t& condition);
     bool getColumnIndex(const std::string& column_name, uint32_t& index);
-    bool verifyColumnProperty(const std::vector<TableColumnProperty_t>& vec_property);
-    bool verifyRowData(const std::vector<SqlValue_t>& value);
+    bool verifyRowData(const std::vector<std::string>& raw_value, std::vector<SqlValue_t>& value);
 
 };
 
 class SqlDatabase_t
 {
 public:
-    bool createTable(const std::string& tb_name);
     bool createTable(const std::string& tb_name, const std::vector<TableColumnProperty_t>& vec_column_property);
     bool dropTable(const std::string& tb_name);
 

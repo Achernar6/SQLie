@@ -51,9 +51,11 @@ bool SqlExecutorDispatcher::dispatch(PacketCollection_t& command)
     {
         return handleInsert(*p_insert);
     }
-
-    printf("Unknown data packet\n");
-    return false;
+    else
+    {
+        printf("Unknown data packet\n");
+        return false;
+    }
 }
 
 void SqlExecutorDispatcher::runBackend()
@@ -78,7 +80,13 @@ bool SqlExecutorDispatcher::handleDropDatabase(const PacketDropDatabase_t& packe
 
 bool SqlExecutorDispatcher::handleCreateTable(const PacketCreateTable_t& packet)
 {
-    return true;
+    if (sql_.getDatabaseInUse() == nullptr)
+    {
+        printf("Failed: no database in use\n");
+        return false;
+    }
+
+    return sql_.getDatabaseInUse()->createTable(packet.table_name, packet.vec_column_property);
 }
 
 bool SqlExecutorDispatcher::handleUseDatabase(const PacketUseDatabase_t& packet)
@@ -88,22 +96,68 @@ bool SqlExecutorDispatcher::handleUseDatabase(const PacketUseDatabase_t& packet)
 
 bool SqlExecutorDispatcher::handleDropTable(const PacketDropTable_t& packet)
 {
-    return true;
+    if (sql_.getDatabaseInUse() == nullptr)
+    {
+        printf("Failed: no database in use\n");
+        return false;
+    }
+
+    return sql_.getDatabaseInUse()->dropTable(packet.table_name);
 }
 
 bool SqlExecutorDispatcher::handleSelect(const PacketSelect_t& packet)
 {
-    return true;
+    if (sql_.getDatabaseInUse() == nullptr)
+    {
+        printf("Failed: no database in use\n");
+        return false;
+    }
+
+    auto p_table_in_use =  sql_.getDatabaseInUse()->getTableByName(packet.table_name);
+    if (p_table_in_use == nullptr)
+    {
+        printf("Failed: table \"%s\" doesn\'t exist\n", packet.table_name.c_str());
+        return false;
+    }
+
+    if (packet.condition.action == EnumConditionActionType::IDLE) return p_table_in_use->selectData(packet.column_name);
+    else return p_table_in_use->selectData(packet.column_name, packet.condition);
 }
 
 bool SqlExecutorDispatcher::handleDelete(const PacketDelect_t& packet)
 {
-    return true;
+    if (sql_.getDatabaseInUse() == nullptr)
+    {
+        printf("Failed: no database in use\n");
+        return false;
+    }
+
+    auto p_table_in_use =  sql_.getDatabaseInUse()->getTableByName(packet.table_name);
+    if (p_table_in_use == nullptr)
+    {
+        printf("Failed: table \"%s\" doesn\'t exist\n", packet.table_name.c_str());
+        return false;
+    }
+
+    return p_table_in_use->deleteRow(packet.condition);
 }
 
 bool SqlExecutorDispatcher::handleInsert(const PacketInsert_t& packet)
 {
-    return true;
+    if (sql_.getDatabaseInUse() == nullptr)
+    {
+        printf("Failed: no database in use\n");
+        return false;
+    }
+
+    auto p_table_in_use =  sql_.getDatabaseInUse()->getTableByName(packet.table_name);
+    if (p_table_in_use == nullptr)
+    {
+        printf("Failed: table \"%s\" doesn\'t exist\n", packet.table_name.c_str());
+        return false;
+    }
+
+    return p_table_in_use->insertRow(packet.vec_value);
 }
 
 } // namespace sql::exec
