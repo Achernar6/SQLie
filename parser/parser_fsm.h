@@ -42,6 +42,7 @@ private:
     bool registerParam(std::string&& keyword, const EnumParserParamType param_type);
     bool registerTransition(TransitionKey_t&& condition, TransitionProperty_t&& action);
 
+    bool parseCondition(std::string& str_condition, ConditionDescriptor_t& condition);
     bool transit(EnumParserParamType param_type);
     void errorIndicationHandler();
     bool sendToExecutor(PacketCollection_t&& command);

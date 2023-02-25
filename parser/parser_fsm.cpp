@@ -319,6 +319,32 @@ bool FsmParser::init(std::shared_ptr<LockFreeQueue<PacketCollection_t>>& sp_flq,
                 return true; 
             }}
         )
+        && registerTransition(
+            TransitionKey_t{EnumParserState::SELECT_COLUMNNAME_FROM_TBNAME, EnumParserParamType::KW_WHERE},
+            TransitionProperty_t{EnumParserState::SELECT_COLUMNNAME_FROM_TBNAME_WHERE, PacketCollection_t{std::monostate{}}, [this](){ return true; }}
+        )
+        && registerTransition(
+            TransitionKey_t{EnumParserState::SELECT_COLUMNNAME_FROM_TBNAME_WHERE, EnumParserParamType::VALUE_OR_NAME},
+            TransitionProperty_t{EnumParserState::SELECT_COLUMNNAME_FROM_TBNAME_WHERE_COND, PacketCollection_t{std::monostate{}}, [this]()
+            {
+                auto p_carrier = verifyCarrier<PacketSelect_t>(this->context_.data_carrier);
+                if (p_carrier == nullptr) return false;
+                if (!parseCondition(this->context_.cur_param, p_carrier->condition)) return false;
+
+                return true;
+            }}
+        )
+        && registerTransition(
+            TransitionKey_t{EnumParserState::SELECT_COLUMNNAME_FROM_TBNAME_WHERE, EnumParserParamType::END_MARKER},
+            TransitionProperty_t{EnumParserState::SELECT_COLUMNNAME_FROM_TBNAME_WHERE_COND_END, PacketCollection_t{std::monostate{}}, [this]()
+            {
+                auto p_carrier = verifyCarrier<PacketSelect_t>(this->context_.data_carrier);
+                if (p_carrier == nullptr) return false;
+
+                sendToExecutor(PacketCollection_t{*p_carrier});
+                return true; 
+            }}
+        )
         // delete
         && registerTransition(
             TransitionKey_t{EnumParserState::IDLE, EnumParserParamType::KW_DELETE},
@@ -336,8 +362,23 @@ bool FsmParser::init(std::shared_ptr<LockFreeQueue<PacketCollection_t>>& sp_flq,
             }}
         )
         && registerTransition(
-            TransitionKey_t{EnumParserState::DELETE_TBNAME, EnumParserParamType::END_MARKER},
-            TransitionProperty_t{EnumParserState::DELETE_TBNAME_END, PacketCollection_t{std::monostate{}}, [this]()
+            TransitionKey_t{EnumParserState::DELETE_TBNAME, EnumParserParamType::KW_WHERE},
+            TransitionProperty_t{EnumParserState::DELETE_TBNAME_WHERE, PacketCollection_t{std::monostate{}}, [this](){ return true; }}
+        )
+        && registerTransition(
+            TransitionKey_t{EnumParserState::DELETE_TBNAME_WHERE, EnumParserParamType::VALUE_OR_NAME},
+            TransitionProperty_t{EnumParserState::DELETE_TBNAME_WHERE_COND, PacketCollection_t{std::monostate{}}, [this]()
+            {
+                auto p_carrier = verifyCarrier<PacketDelect_t>(this->context_.data_carrier);
+                if (p_carrier == nullptr) return false;
+                if (!parseCondition(this->context_.cur_param, p_carrier->condition)) return false;
+
+                return true;
+            }}
+        )
+        && registerTransition(
+            TransitionKey_t{EnumParserState::DELETE_TBNAME_WHERE_COND, EnumParserParamType::END_MARKER},
+            TransitionProperty_t{EnumParserState::DELETE_TBNAME_WHERE_COND_END, PacketCollection_t{std::monostate{}}, [this]()
             {
                 auto p_carrier = verifyCarrier<PacketDelect_t>(this->context_.data_carrier);
                 if (p_carrier == nullptr) return false;
@@ -465,6 +506,45 @@ bool FsmParser::registerTransition(TransitionKey_t&& condition, TransitionProper
     return true;
 }
 
+bool FsmParser::parseCondition(std::string& str_condition, ConditionDescriptor_t& condition)
+{
+    std::string column_name;
+    std::string op1;
+    std::string op2;
+    std::string value;
+
+    size_t index = 0;
+    for (; index < str_condition.size(); index ++)
+    {
+        char& _char = str_condition[index];
+
+        if (_char == '<' || _char == '>' || _char == '=')
+        {
+            if (op1.empty()) op1.append(1, _char);
+            else if (op2.empty()) op2.append(1, _char);
+            else context_.error_indication = EnumParserErrorIndication::INVALID_CONDITION; return false;
+        }
+        else
+        {
+            if (op1.empty()) column_name.append(1, _char);
+            else value.append(1, _char);
+        }
+    }
+
+    if (column_name.empty() || op1.empty() || value.empty()) context_.error_indication = EnumParserErrorIndication::INVALID_CONDITION; return false;
+    if (op1 == "<" && op2.empty()) condition.action = EnumConditionActionType::LT;
+    else if (op1 == "<" && op2 == "=") condition.action = EnumConditionActionType::LTEQ;
+    else if (op1 == "=" && op2 == "=") condition.action = EnumConditionActionType::EQ;
+    else if (op1 == ">" && op2 == "=") condition.action = EnumConditionActionType::GTEQ;
+    else if (op1 == ">" && op2.empty()) condition.action = EnumConditionActionType::GT;
+    else context_.error_indication = EnumParserErrorIndication::INVALID_CONDITION; return false;
+
+    condition.column_name = column_name;
+    condition.anchor_val = value;
+
+    return true;
+}
+
 bool FsmParser::transit(EnumParserParamType param_type)
 {
     auto iter_state = state_transition_table_.find(TransitionKey_t{context_.cur_state, param_type}); 
@@ -511,6 +591,11 @@ void FsmParser::errorIndicationHandler()
         case EnumParserErrorIndication::INCOMPLETE_COMMAND:
         {
             printf("Incomplete command after \"%s\"\n", context_.cur_param.c_str());
+            break;
+        }
+        case EnumParserErrorIndication::INVALID_CONDITION:
+        {
+            printf("Invalid condition \"%s\"", context_.cur_param.c_str());
             break;
         }
         default:

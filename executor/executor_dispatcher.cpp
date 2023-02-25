@@ -113,7 +113,7 @@ bool SqlExecutorDispatcher::handleSelect(const PacketSelect_t& packet)
         return false;
     }
 
-    auto p_table_in_use =  sql_.getDatabaseInUse()->getTableByName(packet.table_name);
+    auto p_table_in_use = sql_.getDatabaseInUse()->getTableByName(packet.table_name);
     if (p_table_in_use == nullptr)
     {
         printf("Failed: table \"%s\" doesn\'t exist\n", packet.table_name.c_str());
@@ -132,7 +132,7 @@ bool SqlExecutorDispatcher::handleDelete(const PacketDelect_t& packet)
         return false;
     }
 
-    auto p_table_in_use =  sql_.getDatabaseInUse()->getTableByName(packet.table_name);
+    auto p_table_in_use = sql_.getDatabaseInUse()->getTableByName(packet.table_name);
     if (p_table_in_use == nullptr)
     {
         printf("Failed: table \"%s\" doesn\'t exist\n", packet.table_name.c_str());
@@ -150,7 +150,7 @@ bool SqlExecutorDispatcher::handleInsert(const PacketInsert_t& packet)
         return false;
     }
 
-    auto p_table_in_use =  sql_.getDatabaseInUse()->getTableByName(packet.table_name);
+    auto p_table_in_use = sql_.getDatabaseInUse()->getTableByName(packet.table_name);
     if (p_table_in_use == nullptr)
     {
         printf("Failed: table \"%s\" doesn\'t exist\n", packet.table_name.c_str());
